@@ -2,6 +2,7 @@
 
 // load modules
 const express = require('express');
+const router = express.Router();
 const morgan = require('morgan');
 const Sequelize = require('sequelize');
 
@@ -21,13 +22,42 @@ const app = express();
 // setup morgan which gives us http request logging
 app.use(morgan('dev'));
 
-// TODO setup your api routes here
+// Database connection test
 console.log('Testing the connection to the database...');
 
 (async () => {
   console.log('Connection to the database successful!');
   await sequelize.authenticate();
 })();
+
+// TODO setup your api routes here
+
+// --- User Routes ---
+// Returns currently authenticated user
+router.get("/users", (req, res) => {
+  const user = req.currentUser;
+
+  res.json({
+    name: user.name,
+    username: user.username
+  })
+});
+
+// Create user
+router.post("/users", (req, res) => {
+  let user;
+  // Get user from the request body
+  user = User.create(req.body);
+  res.redirect("/");
+  
+  // Set status 201 Created
+  res.status(201).end();
+});
+
+// --- Course Routes ---
+// Returns list of courses
+
+
 
 // setup a friendly greeting for the root route
 app.get('/', (req, res) => {
