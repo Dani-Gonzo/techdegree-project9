@@ -12,12 +12,17 @@ const sequelize = new Sequelize({
 });
 
 // references to our models
+const Course = require("./models/course")(sequelize);
+const User = require("./models/user")(sequelize);
 
 // variable to enable global error logging
 const enableGlobalErrorLogging = process.env.ENABLE_GLOBAL_ERROR_LOGGING === 'true';
 
 // create the Express app
 const app = express();
+
+app.use(express.json());
+app.use("/api", router);
 
 // setup morgan which gives us http request logging
 app.use(morgan('dev'));
@@ -56,7 +61,31 @@ router.post("/users", (req, res) => {
 
 // --- Course Routes ---
 // Returns list of courses
+router.get("/courses", async (req, res) => {
+  const courses = await Course.findAll({include: [{model: User, as: "user"}]});
+  res.json(courses);
+});
 
+// Returns course (including user) for the provided id
+router.get("/courses/:id", async (req, res) => {
+  const course = await Course.findByPk(req.params.id);
+  res.json(course);
+});
+
+// Create course
+router.post("/courses", (req, res) => {
+
+});
+
+// Update course
+router.put("/courses/:id", (req, res) => {
+
+});
+
+// Delete course
+router.delete("/courses/:id", (req, res) => {
+
+});
 
 
 // setup a friendly greeting for the root route

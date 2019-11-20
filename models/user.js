@@ -2,38 +2,40 @@
 const Sequelize = require('sequelize');
 
 module.exports = (sequelize) => {
-    class Course extends Sequelize.Model {}
-    Course.init({
+    class User extends Sequelize.Model {}
+    User.init({
         id: {
             type: Sequelize.INTEGER,
             primaryKey: true,
             autoIncrement: true,
         },
-        title: {
+        firstName: {
             type: Sequelize.STRING,
             allowNull: false,
         },
-        description: {
-            type: Sequelize.TEXT,
+        lastName: {
+            type: Sequelize.STRING,
             allowNull: false,
         },
-        estimatedTime: {
-            type: Sequelize.STRING
+        emailAddress: {
+            type: Sequelize.STRING,
+            allowNull: false,
         },
-        materialsNeeded: {
-            type: Sequelize.STRING
-        }
+        password: {
+            type: Sequelize.STRING,
+            allowNull: false,
+        },
     }, { sequelize });
 
-    Course.associate = (models) => {
-        Course.belongsTo(models.User, {
-            as: "user", // alias
+    User.associate = (models) => {
+        User.hasMany(models.Course, {
+            as: "user",
             foreignKey: {
                 fieldName: "userId",
                 allowNull: false
             }
-        });
+        })
     };
 
-    return Course;
+    return User;
 };
