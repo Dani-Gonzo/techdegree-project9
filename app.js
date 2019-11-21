@@ -4,16 +4,10 @@
 const express = require('express');
 const router = express.Router();
 const morgan = require('morgan');
-const Sequelize = require('sequelize');
-
-const sequelize = new Sequelize({
-  dialect: "sqlite",
-  storage: "./fsjstd-restapi.db"
-});
+const { sequelize, models } = require('./db');
 
 // references to our models
-const Course = require("./models/course")(sequelize);
-const User = require("./models/user")(sequelize);
+const {User, Course} = models;
 
 // variable to enable global error logging
 const enableGlobalErrorLogging = process.env.ENABLE_GLOBAL_ERROR_LOGGING === 'true';
@@ -49,14 +43,17 @@ router.get("/users", (req, res) => {
 });
 
 // Create user
-router.post("/users", (req, res) => {
+router.post("/users", async (req, res) => {
   let user;
-  // Get user from the request body
-  user = User.create(req.body);
-  res.redirect("/");
-  
-  // Set status 201 Created
-  res.status(201).end();
+  try {
+    // Get user from the request body
+    user = await User.create(req.body);
+    // Set status 201 Created
+    res.status(201).redirect("/");
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({message: "Bad Request!"}).end();
+  }
 });
 
 // --- Course Routes ---
@@ -68,7 +65,7 @@ router.get("/courses", async (req, res) => {
 
 // Returns course (including user) for the provided id
 router.get("/courses/:id", async (req, res) => {
-  const course = await Course.findByPk(req.params.id);
+  const course = await Course.findByPk(req.params.id, {include: [{model: User, as: "user"}]});
   res.json(course);
 });
 
