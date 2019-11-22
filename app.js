@@ -2,6 +2,7 @@
 
 // load modules
 const express = require('express');
+const {check, validationResult} = require("express-validator");
 const router = express.Router();
 const morgan = require('morgan');
 const { sequelize, models } = require('./db');
@@ -43,16 +44,34 @@ router.get("/users", (req, res) => {
 });
 
 // Create user
-router.post("/users", async (req, res) => {
-  let user;
-  try {
-    // Get user from the request body
-    user = await User.create(req.body);
-    // Set status 201 Created
-    res.status(201).redirect("/");
-  } catch (err) {
-    console.log(err);
-    res.status(400).json({message: "Bad Request!"}).end();
+router.post("/users", [
+  check("firstName").exists().withMessage("Please provide a value for 'firstName'"),
+  check("lastName").exists().withMessage("Please provide a value for 'lastName'"),
+  // TODO: Figure out how to validate email address is unique in the database (query database, check it against email entry)
+  check("emailAddress").exists().withMessage("Please provide a value for 'emailAddress'").isEmail().withMessage("Please provide a valid email address"),
+  check("password").exists().withMessage("Please provide a value for 'password'")
+], async (req, res, next) => {
+  // Get validation result from Request object
+  const errors = validationResult(req);
+
+  // If there are errors...
+  if (!errors.isEmpty()) {
+    // Map over errors object to get error messages
+    const errorMessages = errors.array().map(error => error.msg);
+
+    // Return errors to the client
+    next({message: errorMessages, status: 400});
+  } else {
+    let user;
+    try {
+      // Get user from the request body
+      user = await User.create(req.body);
+      // Set status 201 Created, set Location and end
+      res.status(201).setHeader("Location", "/");
+      res.end();
+    } catch (err) {
+      next(err);
+    }
   }
 });
 
@@ -70,18 +89,38 @@ router.get("/courses/:id", async (req, res) => {
 });
 
 // Create course
-router.post("/courses", (req, res) => {
-
+router.post("/courses", async (req, res) => {
+  let course;
+  try {
+    // Get course from the request body
+    course = await Course.create(req.body);
+    // Set status 201 Created, set Location and end
+    res.status(201).setHeader("Location", `/api/courses/${course.id}`);
+    res.end();
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({message: "Bad Request!"}).end();
+  }
 });
 
 // Update course
-router.put("/courses/:id", (req, res) => {
-
+router.put("/courses/:id", async (req, res) => {
+  let course;
+  try {
+    course = await Course.findByPk(req.params.id);
+    await course.update(req.body);
+    res.status(204).end();
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({message: "Bad Request!"}).end();
+  }
 });
 
 // Delete course
-router.delete("/courses/:id", (req, res) => {
-
+router.delete("/courses/:id", async (req, res) => {
+  const course = await Course.findByPk(req.params.id);
+  await course.destroy();
+  res.status(204).end();
 });
 
 
