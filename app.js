@@ -4,6 +4,7 @@
 const express = require('express');
 const {check, validationResult} = require("express-validator");
 const router = express.Router();
+const bcryptjs = require("bcryptjs");
 const morgan = require('morgan');
 const { sequelize, models } = require('./db');
 
@@ -64,8 +65,10 @@ router.post("/users", [
   } else {
     let user;
     try {
+      user = req.body;
+      user.password = bcryptjs.hashSync(user.password);
       // Get user from the request body
-      user = await User.create(req.body);
+      await User.create(user);
       // Set status 201 Created, set Location and end
       res.status(201).setHeader("Location", "/");
       res.end();
