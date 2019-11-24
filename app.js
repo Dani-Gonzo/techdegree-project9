@@ -89,30 +89,60 @@ router.get("/courses/:id", async (req, res) => {
 });
 
 // Create course
-router.post("/courses", async (req, res) => {
-  let course;
-  try {
-    // Get course from the request body
-    course = await Course.create(req.body);
-    // Set status 201 Created, set Location and end
-    res.status(201).setHeader("Location", `/api/courses/${course.id}`);
-    res.end();
-  } catch (err) {
-    console.log(err);
-    res.status(400).json({message: "Bad Request!"}).end();
+router.post("/courses", [
+  check("title").exists().withMessage("Please provide a value for 'title'"),
+  check("description").exists().withMessage("Please provide a value for 'description'")
+], async (req, res, next) => {
+  // Get validation result from Request object
+  const errors = validationResult(req);
+
+  // If there are errors...
+  if (!errors.isEmpty()) {
+    // Map over errors object to get error messages
+    const errorMessages = errors.array().map(error => error.msg);
+
+    // Return errors to the client
+    next({message: errorMessages, status: 400});
+  } else {
+    let course;
+    try {
+      // Get course from the request body
+      course = await Course.create(req.body);
+      // Set status 201 Created, set Location and end
+      res.status(201).setHeader("Location", `/api/courses/${course.id}`);
+      res.end();
+    } catch (err) {
+      console.log(err);
+      next(err);
+    }
   }
 });
 
 // Update course
-router.put("/courses/:id", async (req, res) => {
-  let course;
-  try {
-    course = await Course.findByPk(req.params.id);
-    await course.update(req.body);
-    res.status(204).end();
-  } catch (err) {
-    console.log(err);
-    res.status(400).json({message: "Bad Request!"}).end();
+router.put("/courses/:id", [
+  check("title").exists().withMessage("Please provide a value for 'title'"),
+  check("description").exists().withMessage("Please provide a value for 'description'")
+], async (req, res) => {
+  // Get validation result from Request object
+  const errors = validationResult(req);
+
+  // If there are errors...
+  if (!errors.isEmpty()) {
+    // Map over errors object to get error messages
+    const errorMessages = errors.array().map(error => error.msg);
+
+    // Return errors to the client
+    next({message: errorMessages, status: 400});
+  } else {
+    let course;
+    try {
+      course = await Course.findByPk(req.params.id);
+      await course.update(req.body);
+      res.status(204).end();
+    } catch (err) {
+      console.log(err);
+      next(err);
+    }
   }
 });
 
