@@ -5,6 +5,7 @@ const express = require('express');
 const {check, validationResult} = require("express-validator");
 const router = express.Router();
 const bcryptjs = require("bcryptjs");
+const auth = require("basic-auth");
 const morgan = require('morgan');
 const { sequelize, models } = require('./db');
 
@@ -30,6 +31,50 @@ console.log('Testing the connection to the database...');
   console.log('Connection to the database successful!');
   await sequelize.authenticate();
 })();
+
+// TODO: Integrate this middleware into routes below!!
+// User authentication
+const authenticateUser = (req, res, next) => {
+  let message = null;
+
+  // Parse user's credentials from Auth header
+  const credentials = auth(req);
+
+  // If credentials are available...
+  if (credentials) {
+    // Attempt retrieval by emailAddress
+    const user = users.find(u => u.emailAddress === credentials.name);
+    
+    // If successfully retrieved...
+    if (user) {
+      // Use bcrypt to compare password to password in the data store
+      const authenticated = bcryptjs.compareSync(credentials.pass, user.password);
+
+      // If passwords match...
+      if (authenticated) {
+        // Store retrieved user object on req object so other middleware functions can access user info
+        req.currentUser = user;
+      } else {
+        message = "Authentication failed";
+      }
+    } else {
+      message = "User not found";
+    }
+  } else {
+    message = "Auth header not found";
+  }
+
+  // If user auth failed...
+  if (message) {
+    console.warn(message);
+
+    // Return message with 401 Unauthorized
+    res.status(401).json({message: "Access Denied"});
+  } else {
+    // Or if auth succeeded...
+    next();
+  }
+}
 
 // TODO setup your api routes here
 
