@@ -34,7 +34,7 @@ console.log('Testing the connection to the database...');
 
 // TODO: Integrate this middleware into routes below!!
 // User authentication
-const authenticateUser = (req, res, next) => {
+const authenticateUser = async (req, res, next) => {
   let message = null;
 
   // Parse user's credentials from Auth header
@@ -43,7 +43,7 @@ const authenticateUser = (req, res, next) => {
   // If credentials are available...
   if (credentials) {
     // Attempt retrieval by emailAddress
-    const user = users.find(u => u.emailAddress === credentials.name);
+    const user = await User.findOne({where: {emailAddress: credentials.name}});
     
     // If successfully retrieved...
     if (user) {
@@ -80,12 +80,13 @@ const authenticateUser = (req, res, next) => {
 
 // --- User Routes ---
 // Returns currently authenticated user
-router.get("/users", (req, res) => {
+router.get("/users", authenticateUser, (req, res) => {
   const user = req.currentUser;
 
   res.json({
-    name: user.name,
-    username: user.username
+    firstName: user.firstName,
+    lastName: user.lastName,
+    emailAddress: user.emailAddress
   })
 });
 
@@ -132,13 +133,20 @@ router.post("/users", [
 // --- Course Routes ---
 // Returns list of courses
 router.get("/courses", async (req, res) => {
-  const courses = await Course.findAll({include: [{model: User, as: "user"}]});
+  const courses = await Course.findAll({
+    include: [{model: User, attributes: {exclude: ['createdAt', 'updatedAt', 'password']}, as: "user"}],
+    attributes: {exclude: ['createdAt', 'updatedAt']}
+  });
   res.json(courses);
 });
 
 // Returns course (including user) for the provided id
 router.get("/courses/:id", async (req, res) => {
-  const course = await Course.findByPk(req.params.id, {include: [{model: User, as: "user"}]});
+  const course = await Course.findByPk(
+    req.params.id, 
+    {include: [{model: User, attributes: {exclude: ['createdAt', 'updatedAt', 'password']}, as: "user"}],
+    attributes: {exclude: ['createdAt', 'updatedAt']}
+  });
   res.json(course);
 });
 
@@ -146,7 +154,7 @@ router.get("/courses/:id", async (req, res) => {
 router.post("/courses", [
   check("title").exists().withMessage("Please provide a value for 'title'"),
   check("description").exists().withMessage("Please provide a value for 'description'")
-], async (req, res, next) => {
+], authenticateUser, async (req, res, next) => {
   // Get validation result from Request object
   const errors = validationResult(req);
 
@@ -176,7 +184,7 @@ router.post("/courses", [
 router.put("/courses/:id", [
   check("title").exists().withMessage("Please provide a value for 'title'"),
   check("description").exists().withMessage("Please provide a value for 'description'")
-], async (req, res) => {
+], authenticateUser, async (req, res, next) => {
   // Get validation result from Request object
   const errors = validationResult(req);
 
@@ -189,10 +197,16 @@ router.put("/courses/:id", [
     next({message: errorMessages, status: 400});
   } else {
     let course;
+    const user = req.currentUser;
     try {
       course = await Course.findByPk(req.params.id);
-      await course.update(req.body);
-      res.status(204).end();
+      if (user.id !== course.userId) {
+        res.status(403).end();
+      } else {
+        await course.update(req.body);
+        res.status(204).end();
+      }
+      
     } catch (err) {
       console.log(err);
       next(err);
@@ -201,10 +215,16 @@ router.put("/courses/:id", [
 });
 
 // Delete course
-router.delete("/courses/:id", async (req, res) => {
+router.delete("/courses/:id", authenticateUser, async (req, res) => {
+  const user = req.currentUser;
   const course = await Course.findByPk(req.params.id);
-  await course.destroy();
-  res.status(204).end();
+  if (user.id !== course.userId) {
+    res.status(403).end();
+  } else {
+    await course.destroy();
+    res.status(204).end();
+  }
+  
 });
 
 
