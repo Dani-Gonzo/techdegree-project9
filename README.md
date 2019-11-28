@@ -1,20 +1,10 @@
+# techdegree-project9
 
-# Full Stack JavaScript Techdegree v2 - REST API Project
-
-## Overview of the Provided Project Files
-
-We've supplied the following files for you to use: 
-
-* The `seed` folder contains a starting set of data for your database in the form of a JSON file (`data.json`) and a collection of files (`context.js`, `database.js`, and `index.js`) that can be used to create your app's database and populate it with data (we'll explain how to do that below).
-* We've included a `.gitignore` file to ensure that the `node_modules` folder doesn't get pushed to your GitHub repo.
-* The `app.js` file configures Express to serve a simple REST API. We've also configured the `morgan` npm package to log HTTP requests/responses to the console. You'll update this file with the routes for the API. You'll update this file with the routes for the API.
-* The `nodemon.js` file configures the nodemon Node.js module, which we are using to run your REST API.
-* The `package.json` file (and the associated `package-lock.json` file) contain the project's npm configuration, which includes the project's dependencies.
-* The `RESTAPI.postman_collection.json` file is a collection of Postman requests that you can use to test and explore your REST API.
+## REST API
+An API built for users to administer a school database containing info about courses. Users can retrieve a list of courses, as well as add, update and delete courses.
 
 ## Getting Started
-
-To get up and running with this project, run the following commands from the root of the folder that contains this README file.
+Run the following commands from the root of the folder.
 
 First, install the project's dependencies using `npm`.
 
@@ -36,3 +26,18 @@ npm start
 ```
 
 To test the Express server, browse to the URL [http://localhost:5000/](http://localhost:5000/).
+
+## Dependencies
+- Express v4.16.3
+- Express validator v6.2.0
+- Basic-Auth v2.0.1
+- Bcryptjs v2.4.3
+- Morgan v1.9.0
+- Sequelize v5.21.2
+- SQLite3 v4.0.2
+
+## Features
+- Validates that required fields are filled when creating a new user or course.
+- Validates that the email address being used to create a new user is valid and doesn't already exist in the database
+- Validates that the currently authenticated user owns the course they are trying to edit or delete. Denies access if they are not.
+- Course GET routes filter out the createdAt, updatedAt and password columns from the database tables.

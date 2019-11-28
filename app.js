@@ -200,6 +200,7 @@ router.put("/courses/:id", [
     const user = req.currentUser;
     try {
       course = await Course.findByPk(req.params.id);
+      // If current user is not the id associated with course, do not allow updating
       if (user.id !== course.userId) {
         res.status(403).end();
       } else {
@@ -218,6 +219,7 @@ router.put("/courses/:id", [
 router.delete("/courses/:id", authenticateUser, async (req, res) => {
   const user = req.currentUser;
   const course = await Course.findByPk(req.params.id);
+  // If current user is not the id associated with course, do not allow deleting
   if (user.id !== course.userId) {
     res.status(403).end();
   } else {
