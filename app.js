@@ -28,11 +28,14 @@ app.use(morgan('dev'));
 console.log('Testing the connection to the database...');
 
 (async () => {
-  console.log('Connection to the database successful!');
-  await sequelize.authenticate();
+  try {
+    await sequelize.authenticate();
+    console.log('Connection to the database successful!');
+  } catch (err) {
+    console.log('Connection to the database failed:' + err);
+  }
 })();
 
-// TODO: Integrate this middleware into routes below!!
 // User authentication
 const authenticateUser = async (req, res, next) => {
   let message = null;
